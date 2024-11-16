@@ -4,6 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/BurntSushi/toml"
+	"github.com/validaoxyz/hyperliquid-exporter/internal/alerters"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -32,6 +35,7 @@ func main() {
 		fmt.Println("  --alias            Node alias (required when OTLP is enabled)")
 		fmt.Println("  --chain            Chain type (required when OTLP is enabled: 'mainnet' or 'testnet')")
 		fmt.Println("  --otlp-insecure    Use insecure connection for OTLP (default: false)")
+		fmt.Println("  --alert-config     Path to TOML file for alerts config (default: alerts disabled)")
 		os.Exit(1)
 	}
 
@@ -46,7 +50,7 @@ func main() {
 	alias := startCmd.String("alias", "", "Node alias (required when OTLP is enabled)")
 	chain := startCmd.String("chain", "", "Chain type (required when OTLP is enabled: 'mainnet' or 'testnet')")
 	otlpInsecure := startCmd.Bool("otlp-insecure", false, "Use insecure connection for OTLP (default: false)")
-
+	alertConfigPath := startCmd.String("alert-config", "", "Path to TOML file for alerts config (default: alerts disabled)")
 	switch os.Args[1] {
 	case "start":
 		startCmd.Parse(os.Args[2:])
@@ -86,6 +90,13 @@ func main() {
 			logger.Error("--chain flag is required when OTLP is enabled")
 			os.Exit(1)
 		}
+	}
+	var alertConfig alerters.AlerterConfig
+	if *alertConfigPath != "" {
+		if _, err := toml.DecodeFile(*alertConfigPath, &alertConfig); err != nil {
+			log.Fatalf("Error loading configuration from: %s error: %s\n", *alertConfigPath, err)
+		}
+
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

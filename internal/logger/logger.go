@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/validaoxyz/hyperliquid-exporter/internal/alerters"
 	"log"
 	"os"
 	"strings"
@@ -14,6 +15,7 @@ var (
 	warningLogger *log.Logger
 	errorLogger   *log.Logger
 	currentLevel  int
+	alertsConfig  alerters.AlerterConfig
 )
 
 const (
@@ -29,6 +31,7 @@ func init() {
 	warningLogger = log.New(os.Stdout, "", 0)
 	errorLogger = log.New(os.Stderr, "", 0)
 	currentLevel = DEBUG // Default log level
+	alertsConfig = alerters.AlerterConfig{TelegramEnabled: false}
 }
 
 func SetLogLevel(level string) error {
@@ -45,6 +48,10 @@ func SetLogLevel(level string) error {
 		return fmt.Errorf("invalid log level: %s", level)
 	}
 	return nil
+}
+
+func setAlertsConfig(alertsConf alerters.AlerterConfig) {
+	alertsConfig = alertsConf
 }
 
 func logWithLevel(logger *log.Logger, level string, format string, v ...interface{}) {
@@ -74,5 +81,8 @@ func Warning(format string, v ...interface{}) {
 func Error(format string, v ...interface{}) {
 	if currentLevel <= ERROR {
 		logWithLevel(errorLogger, "ERROR", format, v...)
+		if alertsConfig.AlertsEnabled {
+			alerters.SendAlertMessage(alertsConfig, fmt.Sprintf(format, v...))
+		}
 	}
 }

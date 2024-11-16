@@ -1,0 +1,7 @@
+alerts_enabled = false
+# obtained through telegram @BotFather user
+telegram_api_key = ""
+# your userID which has run "/start" in the chat that the bot that was created in
+telegram_rx_chat_ids = []
+# whether to use this alert
+telegram_enabled = false
